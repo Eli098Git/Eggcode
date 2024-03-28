@@ -1,7 +1,6 @@
 import winsound
 import time
 import math
-
 class Sprite:
     def __init__(self, x=0, y=0):
         self.x = x
@@ -15,7 +14,7 @@ class EggCodeInterpreter:
     def __init__(self):
         self.variables = {}
         self.sprites = {}
-        self.batch_commands = {}  # Initialize as a dictionary
+        self.batch_commands = {}
 
     def play_startup_jingle(self):
         # Define the frequencies for the notes (C, E, G)
@@ -45,13 +44,16 @@ class EggCodeInterpreter:
                 print("Exiting EggShell...")
                 break
             elif user_input.lower() == "run":
-                if self.batch_commands:
-                    self.execute_batch()
+                print("No batch file found. Use 'batch' command to create one.")
+            elif user_input.lower().startswith("run "):
+                batch_name = user_input[4:].strip()
+                if batch_name in self.batch_commands:
+                    self.execute_batch(self.batch_commands[batch_name])
                 else:
-                    print("No batch file found. Use 'batch' command to create one.")
+                    print("Batch file not found:", batch_name)
             elif user_input.strip():
                 if user_input.lower().startswith("batch"):
-                    self.create_batch(user_input[6:])
+                    self.create_batch(user_input[5:])
                 else:
                     self.execute(user_input.strip())
 
@@ -74,6 +76,7 @@ class EggCodeInterpreter:
             y = int(tokens[3])
             self.variables[sprite_name] = len(self.sprites)
             self.sprites[sprite_name] = Sprite(x, y)
+            print(f"Sprite {sprite_name} created at ({x}, {y})")
 
         elif tokens[0] == "move_sprite":
             sprite_name = tokens[1]
@@ -82,6 +85,7 @@ class EggCodeInterpreter:
             sprite = self.sprites.get(sprite_name)
             if sprite:
                 sprite.move(dx, dy)
+                print(f"Sprite {sprite_name} moved by ({dx}, {dy})")
             else:
                 print("Sprite not found:", sprite_name)
 
@@ -153,7 +157,7 @@ class EggCodeInterpreter:
             self.zoom_out(tokens[1])
 
         elif tokens[0] == "batch":
-            self.create_batch(tokens[1])
+            self.create_batch(line[6:])
 
         elif tokens[0] == "calc":
             self.calculate(tokens[1:])
@@ -164,17 +168,17 @@ class EggCodeInterpreter:
         else:
             print("Invalid syntax:", line)
 
-    def execute_batch(self):
-        for command in self.batch_commands.values():
+    def execute_batch(self, commands):
+        for command in commands:
             self.execute(command)
-        self.batch_commands = {}
 
     def create_batch(self, commands):
-        # Split batch name and commands
-        batch_name, commands = commands.split(':')
-
-        # Add batch to batch_commands dictionary
-        self.batch_commands[batch_name.strip()] = commands.strip()
+        try:
+            batch_name, command_str = commands.split(':')
+            self.batch_commands[batch_name.strip()] = [command.strip() for command in command_str.split(';')]
+            print(f"Batch '{batch_name}' created successfully.")
+        except ValueError:
+            print("Invalid syntax for batch command. Use 'batch <name>: <commands>'")
 
     def render(self):
         for sprite_name, sprite in self.sprites.items():
@@ -207,9 +211,9 @@ class EggCodeInterpreter:
         print("fade_in <duration>: Fade in the screen over the specified duration")
         print("zoom_in <factor>: Zoom in on the screen by the specified factor")
         print("zoom_out <factor>: Zoom out from the screen by the specified factor")
-        print("batch <batch_name>:<commands>: Create a batch of commands")
+        print("batch <name>: <commands>: Create a batch of commands")
         print("run <batch_name>: Execute the batch of commands")
-        print("calc <expression>: Perform basic arithmetic operations")
+        print("calc <expression>: Perform a calculation")
         print("exit: Exit EggShell")
 
     def display_tips_and_tricks(self):
@@ -290,10 +294,10 @@ class EggCodeInterpreter:
 
     def calculate(self, expression):
         try:
-            result = eval(' '.join(expression))  # Evaluate the expression
+            result = eval(' '.join(expression))
             print("Result:", result)
         except Exception as e:
-            print("Error:", e)
+            print("Error during calculation:", e)
 
 
 def display_logo():
@@ -321,6 +325,10 @@ def eggshell():
 if __name__ == "__main__":
     display_logo()
     eggshell()
+
+
+
+
 
 
 
